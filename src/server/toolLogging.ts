@@ -8,7 +8,20 @@ export const logToolExecution = async <Value, Failure>(
   execute: () => Promise<Result<Value, Failure>>,
 ): Promise<Result<Value, Failure>> => {
   const startedAt = performance.now();
-  const result = await execute();
+  let result: Result<Value, Failure>;
+  try {
+    result = await execute();
+  } catch (cause: unknown) {
+    logger.error(
+      {
+        tool,
+        durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
+        status: "exception",
+      },
+      "MCP tool execution failed unexpectedly",
+    );
+    throw cause;
+  }
   logger[result.ok ? "info" : "warn"](
     {
       tool,
